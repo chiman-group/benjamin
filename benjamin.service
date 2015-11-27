@@ -1,0 +1,11 @@
+[Unit]
+Description=Telegram Hubot Bot
+
+[Service]
+User=samim
+WorkingDirectory=/home/samim/benjamin
+ExecStart=/home/samim/benjamin/start.sh
+Restart=always
+StandardInput=null
+SyslogIdentifier=%n
+KillMode=process
