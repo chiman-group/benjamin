@@ -29,13 +29,14 @@ module.exports = (robot) ->
 
     robot.brain.set "theRoom", room
     robot.brain.set "lastWater", (date.getTime() // 1000)
+    robot.brain.set "lastNag", (date.getTime() // 1000)
     robot.logger.info "Watered on #{date.toDateString()}"
 
   checkWater = ->
     # Recursive
     setTimeout () ->
       robot.emit "checkWater"
-    , 60 * 60 * 1000
+    , 60 * 1000
 
     room = robot.brain.get "theRoom"
     robot.logger.info "Room is #{room}"
@@ -44,15 +45,19 @@ module.exports = (robot) ->
     robot.logger.info "Going to check for water"
 
     now = Date.now() // 1000
-    last = robot.brain.get "lastWater"
-    diff = now - last
+    lastWater = robot.brain.get "lastWater"
+    lastNag = robot.brain.get "lastNag"
     sixDays = 6 * 24 * 60 * 60
+    twoHours = 60 * 60 * 2
 
-    if diff < sixDays
-      robot.logger.info "Fine! Last watering was #{diff / (60 * 60 * 24)} days ago."
+    if ((now - lastWater) < sixDays)
+      robot.logger.info "Fine! Last watering was #{(now - lastWater) / (60 * 60 * 24)} days ago."
     else
-      robot.logger.info "Needy! Last watering was #{diff / (60 * 60 * 24)} days ago."
-      robot.messageRoom room, random(nags)
+      robot.logger.info "Needy! Last watering was #{(now - lastWater) / (60 * 60 * 24)} days ago."
+      robot.logger.info "Last nag was #{(now - lastNag) / 60 } mins ago."
+      if ((now - lastNag) > twoHours)
+        robot.messageRoom room, random(nags)
+        robot.brain.set "lastNag", now
 
   robot.on "checkWater", () ->
     checkWater()
