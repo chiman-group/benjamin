@@ -13,22 +13,29 @@ module.exports = (robot) ->
         "سپاس"
   ]
 
-  robot.hear /water/i, (res) ->
-    room = res.message.user.room
-    now = Date.now() // 1000
-    robot.brain.set "theRoom", room
-    robot.brain.set "lastWater", now
-    robot.logger.info "Watered on #{now}"
-    res.send random(thanks)
-
   random = (items) ->
     items[ Math.floor(Math.random() * items.length) ]
+
+  robot.hear /water (.*)/i, (res) ->
+    room = res.message.user.room
+    command = res.match[1]
+
+    if command is "reset"
+      date = new Date(1)
+      res.send "خب من الان همه چی یادم رفت مثلا"
+    else if command is "done"
+      date = new Date()
+      res.send random(thanks)
+
+    robot.brain.set "theRoom", room
+    robot.brain.set "lastWater", (date.getTime() // 1000)
+    robot.logger.info "Watered on #{date.toDateString()}"
 
   checkWater = ->
     # Recursive
     setTimeout () ->
       robot.emit "checkWater"
-    , 30 * 60 * 1000
+    , 60 * 60 * 1000
 
     room = robot.brain.get "theRoom"
     robot.logger.info "Room is #{room}"
