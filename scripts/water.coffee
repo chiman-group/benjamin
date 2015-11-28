@@ -1,3 +1,5 @@
+moment = require('moment')
+
 module.exports = (robot) ->
   nags = [
         "من آب می‌خوام",
@@ -13,24 +15,36 @@ module.exports = (robot) ->
         "سپاس"
   ]
 
+  room = process.env.GROUP_ID
+
   random = (items) ->
     items[ Math.floor(Math.random() * items.length) ]
 
   robot.hear /water (.*)/i, (res) ->
-    room = res.message.user.room
+    thisRoom = res.message.user.room
     command = res.match[1]
+
+    if room.localeCompare(thisRoom) isnt 0
+      robot.logger.info "#{thisRoom}, #{room}"
+      res.send "من با غریبه حرف نمی‌زنم"
+      return
 
     if command is "reset"
       date = new Date(1)
       res.send "خب من الان همه چی یادم رفت مثلا"
+      robot.brain.set "lastWater", (date.getTime() // 1000)
+      robot.brain.set "lastNag", (date.getTime() // 1000)
     else if command is "done"
       date = new Date()
       res.send random(thanks)
-
-    robot.brain.set "theRoom", room
-    robot.brain.set "lastWater", (date.getTime() // 1000)
-    robot.brain.set "lastNag", (date.getTime() // 1000)
-    robot.logger.info "Watered on #{date.toDateString()}"
+      robot.logger.info "Watered on #{date.toDateString()}"
+      robot.brain.set "lastWater", (date.getTime() // 1000)
+      robot.brain.set "lastNag", (date.getTime() // 1000)
+    else if command is "when"
+      lastWaterTime = robot.brain.get "lastWater"
+      moment.locale('fa')
+      lastWater = moment.unix(lastWaterTime).fromNow()
+      res.send lastWater
 
   checkWater = ->
     # Recursive
@@ -38,7 +52,6 @@ module.exports = (robot) ->
       robot.emit "checkWater"
     , 60 * 1000
 
-    room = robot.brain.get "theRoom"
     robot.logger.info "Room is #{room}"
     return if !room
 
